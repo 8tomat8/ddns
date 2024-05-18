@@ -1,0 +1,12 @@
+version: "3.9"
+
+name: ddns
+services:
+  ddns:
+    container_name: ddns
+    build:
+      context: .
+    env_file:
+      - .env
+
+    restart: unless-stopped
