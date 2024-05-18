@@ -4,6 +4,10 @@ A simple DDNS service for my local server, based on CloudFront API
 
 ## Configuration
 
+> **!!! IMPORTANT !!!**
+> 
+> You must create the initial records in the CloudFront manually
+
 ### Local
 
 ```bash
