@@ -11,7 +11,7 @@ A simple DDNS service for my local server, based on CloudFront API
 ### .env file for local or Docker setup
 
 ```bash
-DOMAIN=*.with-mask.domain.net,sub.domain.com
+DOMAINS=*.with-mask.domain.net,sub.domain.com
 CLOUDFLARE_API_TOKEN=<CloudFlare API token>
 ```
 

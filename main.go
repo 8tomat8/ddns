@@ -16,11 +16,18 @@ import (
 )
 
 var (
-	domain  = os.Getenv("DOMAIN")
+	domains = os.Getenv("DOMAINS")
 	cfToken = os.Getenv("CLOUDFLARE_API_TOKEN")
 )
 
 func main() {
+	if domains == "" {
+		log.Fatal("DOMAINS env is required")
+	}
+	if cfToken == "" {
+		log.Fatal("CLOUDFLARE_API_TOKEN env is required")
+	}
+
 	api, err := cloudflare.NewWithAPIToken(cfToken)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "failed to create cloudflare api client"))
@@ -30,7 +37,7 @@ func main() {
 		zoneID   string
 		cfRecord cloudflare.DNSRecord
 	}
-	domains := lo.Reduce(strings.Split(domain, ","), func(recs []record, domain string, i int) []record {
+	records := lo.Reduce(strings.Split(domains, ","), func(recs []record, domain string, i int) []record {
 		domain = strings.TrimSpace(domain)
 
 		// The TLD package requires a domain with a scheme, otherwise output will be empty and no error will be returned
@@ -73,33 +80,33 @@ func main() {
 
 	log.Println("start watching ip changes")
 	for {
-		for _, domain := range domains {
+		for _, record := range records {
 			func() {
-				log.Println("checking ip for domain", domain.cfRecord.Name)
+				log.Println("checking ip for domain", record.cfRecord.Name)
 				ip, err := getMyIP()
 				if err != nil {
 					log.Println(err)
 					return
 				}
-				if ip == domain.cfRecord.Content {
-					log.Println("ip not changed", domain.cfRecord.Name)
+				if ip == record.cfRecord.Content {
+					log.Println("ip not changed", record.cfRecord.Name)
 					return
 				}
-				log.Printf("ip for %s changed to %s\n", domain.cfRecord.Name, ip)
+				log.Printf("ip for %s changed to %s\n", record.cfRecord.Name, ip)
 
-				domain.cfRecord, err = api.UpdateDNSRecord(ctx, cloudflare.ZoneIdentifier(domain.zoneID), cloudflare.UpdateDNSRecordParams{
-					ID:      domain.cfRecord.ID,
-					Type:    domain.cfRecord.Type,
-					Name:    domain.cfRecord.Name,
+				record.cfRecord, err = api.UpdateDNSRecord(ctx, cloudflare.ZoneIdentifier(record.zoneID), cloudflare.UpdateDNSRecordParams{
+					ID:      record.cfRecord.ID,
+					Type:    record.cfRecord.Type,
+					Name:    record.cfRecord.Name,
 					Content: ip,
-					Proxied: domain.cfRecord.Proxied,
-					TTL:     domain.cfRecord.TTL,
+					Proxied: record.cfRecord.Proxied,
+					TTL:     record.cfRecord.TTL,
 				})
 				if err != nil {
-					log.Println(errors.Wrapf(err, "failed to update dns record for domain %s", domain.cfRecord.Name))
+					log.Println(errors.Wrapf(err, "failed to update dns record for domain %s", record.cfRecord.Name))
 					return
 				}
-				log.Println("dns record updated for domain", domain.cfRecord.Name)
+				log.Println("dns record updated for domain", record.cfRecord.Name)
 			}()
 		}
 		time.Sleep(1 * time.Minute)
