@@ -18,7 +18,6 @@ import (
 var (
 	domain  = os.Getenv("DOMAIN")
 	cfToken = os.Getenv("CLOUDFLARE_API_TOKEN")
-	lastIP  = ""
 )
 
 func main() {
